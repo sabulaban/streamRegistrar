@@ -102,10 +102,8 @@ class eventHanlder:
 		eDf = df.drop(['alarm', 'fqa', 'node'], axis = 1).groupby(['event_id'], as_index=False).agg({'tStamp': ['min', 'max']}).reset_index()
 		eDf.columns = eDf.columns.droplevel()
 		eRecs = eDf.rename(columns={'': "event_id", 'min': 'tStamp', 'max': 'eTStamp'}).to_dict('records')
-		t1 = time.time()
 		for records, table, phkeys in zip([aRecs, nRecs, fRecs, eRecs, cache], [self.alarmsTable, self.nodesTable, self.fqasTable, self.incidentsTable, self.rawTable], [['tStamp', 'alarm'], ['node', 'tStamp'], ['fqa', 'tStamp'], ['event_id'], ['event_id', 'utcTStamp']]):
 			self.batch_to_dynamo(records, table, phkeys)
-		print(time.time() - t1)
 		return None, []
 	def poll_kinesis(self):
 		shrdIt = self.initShardId
