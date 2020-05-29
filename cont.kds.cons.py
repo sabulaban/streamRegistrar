@@ -5,6 +5,19 @@ from datetime import datetime
 from datetime import timezone
 import pandas as pd
 import os
+import thread
+
+def write_dynamo(records, table, phkeys, src):
+	if table is not None:
+		with table.batch_writer(overwrite_by_pkeys=phkeys) as batch:
+			for record in records:
+				record['source'] = src
+				try:
+					batch.put_item(Item = record)
+				except:
+					print('Batch write Failed')
+	else:
+		print('Table not availble')
 
 class eventHanlder:
 	def __init__(self, region, dur, src, stream, cname, sName, tenantID):
@@ -75,13 +88,17 @@ class eventHanlder:
 			self.rawTable = None
 
 	def batch_to_dynamo(self, records, table, phkeys):
-		if table is not None:
-			with table.batch_writer(overwrite_by_pkeys=phkeys) as batch:
-				for record in records:
-					record['source'] = self.src
-					batch.put_item(Item = record)
-		else:
-			print('Table not availble')
+		try:
+			thread.start_new_thread(write_dynamo, (records, table, phkeys, self.src))
+		except:
+			print('Thread Failed')
+#		if table is not None:
+#			with table.batch_writer(overwrite_by_pkeys=phkeys) as batch:
+#				for record in records:
+#					record['source'] = self.src
+#					batch.put_item(Item = record)
+#		else:
+#			print('Table not availble')
 
 	def flush(self, cache):
 		alarms = []
@@ -175,4 +192,3 @@ if __name__ == "__main__":
 	dur = int(os.environ['dur'])
 	eh = eventHanlder(region, dur, 'kcl', 'whatever', '{}_kcl'.format(tenant), streamname, tenant)
 	eh.poll_kinesis()
-
