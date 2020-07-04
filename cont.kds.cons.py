@@ -5,7 +5,7 @@ from datetime import datetime
 from datetime import timezone
 import pandas as pd
 import os
-import thread
+import _thread as thread
 
 def write_dynamo(records, table, phkeys, src):
 	if table is not None:
