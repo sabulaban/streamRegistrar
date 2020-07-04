@@ -30,6 +30,7 @@ class eventHanlder:
 		self.stream_started = False
 		self.lastSTime = 0
 		self.lastETime = 0
+		self.RefETime = 0
 		self.lastEventId = None
 		self.initShardId = None
 		self.incidentCache = None
@@ -130,9 +131,10 @@ class eventHanlder:
 			event = self.client.get_records(ShardIterator=shrdIt, Limit = 123)
 			shrdIt = event['NextShardIterator']
 			if len(event['Records']) == 0:
-				dtInt = datetime.now()
-				dtUTC = int(dtInt.replace(tzinfo=timezone.utc).timestamp())
-				if ((dtUTC - self.lastETime) > self.dur) & (cachedEventId is not None):
+				#dtInt = datetime.now()
+				dtInt = int(time.time())
+				#dtUTC = int(dtInt.replace(tzinfo=timezone.utc).timestamp())
+				if ((dtInt - self.RefETime) > self.dur) & (cachedEventId is not None):
 #					print(cachedEventId, self.lastETime, self.lastSTime)
 #					cachedEventId = None
 #					alarms = []
@@ -168,6 +170,7 @@ class eventHanlder:
 							record['event_id']  = 'event_{}'.format(str(self.lastSTime))
 							record['trap_id'] = 'trap_{0}_{1}_{2}'.format(record['event_id'], record['fqa'], str(tStamp))
 							self.lastETime = tStamp
+							self.RefETime = int(time.time())
 							retRecords.append(record)
 							cachedRecords.append(record)
 						elif (tStamp - self.lastETime) > self.dur:
@@ -175,6 +178,7 @@ class eventHanlder:
 								cachedEventId, cachedRecords = self.flush(cachedRecords)
 							self.lastSTime = tStamp
 							self.lastETime = tStamp
+							self.RefETime = int(time.time())
 							record['event_id']  = 'event_{}'.format(str(tStamp))
 							record['trap_id'] = 'trap_{0}_{1}_{2}'.format(record['event_id'], record['fqa'], str(tStamp))
 							self.lastEventId = 'event_{}'.format(str(tStamp))
